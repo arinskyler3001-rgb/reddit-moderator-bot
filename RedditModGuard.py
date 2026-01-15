@@ -1,14 +1,6 @@
 import praw
 import time
 
-reddit = praw.Reddit(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    username=USERNAME,
-    password=PASSWORD,
-    user_agent=USER_AGENT
-)
-
 def is_spam(submission):
     text = f"{submission.title.lower()} {submission.selftext.lower()}"
 
