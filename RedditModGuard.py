@@ -1,20 +1,54 @@
-import praw
+import os
 import time
+import praw
+from dotenv import load_dotenv
+
+load_dotenv()
+
+reddit = praw.Reddit(
+    client_id=os.getenv("CLIENT_ID"),
+    client_secret=os.getenv("CLIENT_SECRET"),
+    username=os.getenv("USERNAME"),
+    password=os.getenv("PASSWORD"),
+    user_agent=os.getenv("USER_AGENT")
+)
+
+# ===== CONFIG =====
+
+SUBREDDITS = ["romancenovels"]
+CROSSPOST_TARGETS = ["Hot_Romance_Stories"]
+
+SPAM_KEYWORDS = [
+    "buy now",
+    "free money",
+    "promo",
+]
+
+MIN_KARMA = 50
+ENABLE_CROSSPOST = True
+
+# ==================
 
 def is_spam(submission):
+    if submission.author is None:
+        return True
+
     text = f"{submission.title.lower()} {submission.selftext.lower()}"
 
-    for word in SPAM_KEYWORDS:
-        if word in text:
-            return True
+    if any(word in text for word in SPAM_KEYWORDS):
+        return True
 
-    if submission.author.link_karma + submission.author.comment_karma < MIN_KARMA:
+    karma = submission.author.link_karma + submission.author.comment_karma
+    if karma < MIN_KARMA:
         return True
 
     return False
 
 
 def crosspost_post(submission):
+    if not ENABLE_CROSSPOST:
+        return
+
     for target in CROSSPOST_TARGETS:
         try:
             submission.crosspost(
@@ -33,7 +67,7 @@ def moderate():
 
         for submission in subreddit.stream.submissions(skip_existing=True):
             try:
-                print(f"Checking post: {submission.title}")
+                print(f"Checking: {submission.title}")
 
                 if is_spam(submission):
                     submission.mod.remove()
@@ -55,7 +89,3 @@ def moderate():
 
 if __name__ == "__main__":
     moderate()
-
-
-
-
